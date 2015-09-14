@@ -29,24 +29,38 @@ labels <- read.table(file.path(fld.data, "activity_labels.txt"))
 df.x_test <- read.table(file.path(fld.data, "test", "X_test.txt"))
 df.y_test <- read.table(file.path(fld.data, "test", "y_test.txt"))
 df.subject_test  <- read.table(file.path(fld.data, "test", "subject_test.txt"))
-#df.x_train <- read.table(file.path(fld.data, "train", "X_train.txt"))
-#df.y_train <- read.table(file.path(fld.data, "train", "y_train.txt"))
-#df.subject_train  <- read.table(file.path(fld.data, "train", "subject_train.txt"))
+df.x_train <- read.table(file.path(fld.data, "train", "X_train.txt"))
+df.y_train <- read.table(file.path(fld.data, "train", "y_train.txt"))
+df.subject_train  <- read.table(file.path(fld.data, "train", "subject_train.txt"))
 
+df.x_combined <- rbind(df.x_test, df.x_train)
+df.y_combined <- rbind(df.y_test, df.y_train)
+df.subject_combined <- rbind(df.subject_test, df.subject_train)
 
-df.labels <- select(left_join(df.y_test, labels, by=c("V1")), c(2))
+df.labels <- select(left_join(df.y_combined, labels, by=c("V1")), c(2))
 names(df.labels) <- c('activity')
 df.labels$ID <- seq.int(nrow(df.labels))
 
-names(df.subject_test) <- c('subject')
-df.subject_test$ID <- seq.int(nrow(df.subject_test))
+names(df.subject_combined) <- c('subject')
+df.subject_combined$ID <- seq.int(nrow(df.subject_combined))
 
-df.subset <- select(df.x_test, one_of(paste("V",select_columns[,1], sep="")))
+df.subset <- select(df.x_combined, one_of(paste("V",select_columns[,1], sep="")))
 names(df.subset) <- as.vector(select_columns[,2], mode="any")
-df.subset$ID <- seq.int(nrow(df.x_test))
+df.subset$ID <- seq.int(nrow(df.x_combined))
 
-df.result <- df.labels %>%
+df.result <- df.subject_combined %>%
               select(c(2, 1)) %>%
-              full_join(df.subject_test, by=c("ID")) %>%
+              full_join(df.labels, by=c("ID")) %>%
               full_join(df.subset, by=c("ID"))
-#df.result <- full_join(df.subset, select(left_join(df.y_test, labels), c(2,3)))
+
+write.table(df.result, file="result1.csv", row.names=FALSE, sep="\t")
+
+# Compute the means
+apply_mean <- function(x) {
+  apply(x %>% select(-c(1,2,3)), MARGIN=2, FUN=mean)
+}
+groups <- unique(select(df.result, c(2,3)))
+df.means <- sapply(split(df.result, groups), FUN=apply_mean)
+
+write.table(df.means, file="result2.csv", row.names=TRUE, sep="\t")
+
