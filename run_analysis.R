@@ -53,7 +53,7 @@ df.result <- df.subject_combined %>%
               full_join(df.labels, by=c("ID")) %>%
               full_join(df.subset, by=c("ID"))
 
-write.table(df.result, file="result1.csv", row.names=FALSE, sep="\t")
+write.table(df.result, file="result1.txt", row.names=FALSE, sep="\t")
 
 # Compute the means
 apply_mean <- function(x) {
@@ -62,5 +62,5 @@ apply_mean <- function(x) {
 groups <- unique(select(df.result, c(2,3)))
 df.means <- sapply(split(df.result, groups), FUN=apply_mean)
 
-write.table(df.means, file="result2.csv", row.names=TRUE, sep="\t")
+write.table(df.means, file="result2_averages.csv", row.names=TRUE, sep="\t")
 
